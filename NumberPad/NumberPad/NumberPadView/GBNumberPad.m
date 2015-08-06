@@ -49,18 +49,6 @@
 @implementation GBNumberPad
 
 
-/*
-
-    NEED FURTHER IMPROVEMENT ON CUSTOMIZING
- 
-    NEED UPDATE FOR DOUBLE ZERO VARIATION
-        - ADD SUPERSCRIPT CUSTOMIZATION
-        - ADD COMMA FOR EVERY 3 DIGIT
-
-    NEED TO FACTOR OUT CERTAIN CODE AND CODE CLEANING
-*/
-
-
 // Only override drawRect: if you perform custom drawing.
 // An empty implementation adversely affects performance during animation.
 - (void)drawRect:(CGRect)rect
@@ -114,7 +102,7 @@
     
     self.myNumberPadVariation = NumberPadVariationDoubleZeroType;
     
-    self.isSubViewNeedBorder = YES;
+    self.isSubViewNeedBorder = NO;
     
     self.isOuterViewFrameNeedBorder = NO;
     
@@ -316,31 +304,16 @@
     
     //////////////// LABELS AND BUTTONS  //////////////////////////////
     
-    NSString *amountText = @"$0.00";
-    
-    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot && self.myTextAmountUsesSuperscript)
-        amountText = @"$0";
-    
     amountTotal = [[UILabel alloc]initWithFrame:CGRectMake(20, 0, self.AmountView.frame.size.width - 40, self.AmountView.frame.size.height)];
     amountTotal.numberOfLines = 1;
     amountTotal.adjustsFontSizeToFitWidth = YES;
     amountTotal.textColor = self.myTextAmountColor;
-    amountTotal.text = amountText;
     amountTotal.textAlignment = self.myTextAmountAlignment;
     amountTotal.font = [UIFont systemFontOfSize:self.amountFontSize];
     amountTotal.font = self.amountFont;
     
-    NSMutableAttributedString *mString = [GBNumberPadUtils createStringWithSpacing:amountTotal.text spacngValue:0];
-    
-    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot && self.myTextAmountUsesSuperscript)
-    {
-        UIFont *tempFont = [UIFont fontWithName:self.amountFontName size:amountTotal.font.pointSize / 3];
-        
-        [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(0,1)];
-    }
-    
-    amountTotal.attributedText = mString;
-    
+    [self resetTotalAmountToZero];
+
     
     UIImageView *backImageView = [[UIImageView alloc]initWithFrame:CGRectMake((quarterWidth/2) - 15, (self.NumericViewBack.frame.size.height /2) - 10, 30, 20)];
     backImageView.image = self.backImage;
@@ -632,13 +605,21 @@
         
         [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(0,1)];
         
-        if (![numeric2Decimal isEqualToString:@"00"])
+        if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
         {
-            [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(mString.length - numeric2Decimal.length, numeric2Decimal.length)];
+            if (![numeric2Decimal isEqualToString:@"00"])
+            {
+                [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(mString.length - numeric2Decimal.length, numeric2Decimal.length)];
+            }
+        }
+        else if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+        {
+            [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(mString.length - 2, 2)];
         }
         
         amountTotal.attributedText = mString;
     }
+    
 }
 
 -(void)setDecimalPointEnabled:(BOOL)enabled
@@ -669,7 +650,34 @@
     }
 }
 
+-(void)resetTotalAmountToZero
+{
+    NSString *amountText = @"$0.00";
+    
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot && self.myTextAmountUsesSuperscript)
+        amountText = @"$0";
+    else if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType && self.myTextAmountUsesSuperscript)
+        amountText = @"$000";
+    
+    amountTotal.text = amountText;
 
+    
+    NSMutableAttributedString *mString = [GBNumberPadUtils createStringWithSpacing:amountTotal.text spacngValue:0];
+    
+    if (self.myTextAmountUsesSuperscript)
+    {
+        UIFont *tempFont = [UIFont fontWithName:self.amountFontName size:amountTotal.font.pointSize / 3];
+        
+        [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(0,1)];
+        
+        if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+        {
+            [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(mString.length - 2, 2)];
+        }
+    }
+    
+    amountTotal.attributedText = mString;
+}
 
 
 ////////////// NUMBER PAD GESTURES ////////////////////////////////
@@ -715,8 +723,6 @@
     
     [self setAmountTotalToSuperScript];
     
-    //NSLog(@"final: %@, %@, %@", displayString, amountString, amountTotal.text);
-    
     if ([self.delegate respondsToSelector:@selector(numberPadReturnAmountForView:forNumberString:)])
     {
         [self.delegate numberPadReturnAmountForView:self forNumberString:amountString];
@@ -730,11 +736,15 @@
     
     NSMutableString *displayString, *amountString;
     
+    displayString = [NSMutableString stringWithString:[numericTotal substringToIndex:numericTotal.length - 2]];
+    
     if (self.myTextAmountAddCommaEvery3Digits)
         displayString = [NSMutableString stringWithString:[formatter stringFromNumber:[NSNumber numberWithInteger:[[numericTotal substringToIndex:numericTotal.length - 2] integerValue]]]];
     
     displayString = [NSMutableString stringWithFormat:@"%@%@", displayString, [numericTotal substringFromIndex:numericTotal.length - 2]];
-    [displayString insertString:@"." atIndex:[displayString length]-2];
+    
+    if (!self.myTextAmountUsesSuperscript)
+        [displayString insertString:@"." atIndex:[displayString length]-2];
     
     amountString = [NSMutableString stringWithString:numericTotal];
     [amountString insertString:@"." atIndex:[numericTotal length]-2];
@@ -743,7 +753,7 @@
     
     amountTotal.text = [NSString stringWithFormat:@"$%@", displayString];
     
-    NSLog(@"value: %@, %@", displayString, [formatter stringFromNumber:[NSNumber numberWithInteger:[[numericTotal substringToIndex:numericTotal.length - 2] integerValue]]]);
+    [self setAmountTotalToSuperScript];
     
     if ([self.delegate respondsToSelector:@selector(numberPadReturnAmountForView:forNumberString:)])
     {
@@ -780,23 +790,7 @@
             countIndex = countIndex + addindex;
             
             [self updateTotalAmountForVariationDoubleZero];
-            
-            /*
-            NSMutableString *tempStr = [NSMutableString stringWithString:numericTotal];
-            [tempStr insertString:@"." atIndex:[numericTotal length]-2];
-            
-            transferAmount = [tempStr doubleValue];
-            
-            amountTotal.text = [NSString stringWithFormat:@"$%@", tempStr];
-            
-            
-            //NSLog(@"index: %lu, value: %@", (long)countIndex, numericTotal);
-            
-            if ([self.delegate respondsToSelector:@selector(numberPadReturnAmountForView:forNumberString:)])
-            {
-                [self.delegate numberPadReturnAmountForView:self forNumberString:tempStr];
-            }*/
-            
+
         }
         else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
         {
@@ -834,44 +828,6 @@
             }
             
             [self updateTotalAmountForVariationSingleDot];
-            
-            /*
-            NSMutableString *amountString, *displayString;
-            
-            NSString *appendString = [NSString stringWithFormat:@"%@%@", numericTotal, numeric2Decimal];
-            amountString = [NSMutableString stringWithString:appendString];
-            
-            
-            if ([numeric2Decimal isEqualToString:@"00"])
-            {
-                displayString = [NSMutableString stringWithString:numericTotal];
-            }
-            else
-            {
-                displayString = [NSMutableString stringWithString:appendString];
-            }
-            
-            [amountString insertString:@"." atIndex:[amountString length]- numeric2Decimal.length];
-            transferAmount = [amountString doubleValue];
-            
-            if (!self.myTextAmountUsesSuperscript)
-            {
-                [displayString insertString:@"." atIndex:[displayString length]- numeric2Decimal.length];
-            }
-            
-            
-            
-            amountTotal.text = [NSString stringWithFormat:@"$%@", displayString];
-            countIndex = countIndex + addindex;
-            
-            [self setAmountTotalToSuperScript];
-            
-            //NSLog(@"final: %@, %@, %@", displayString, amountString, amountTotal.text);
-            
-            if ([self.delegate respondsToSelector:@selector(numberPadReturnAmountForView:forNumberString:)])
-            {
-                [self.delegate numberPadReturnAmountForView:self forNumberString:amountString];
-            }*/
         }
     }
     @catch (NSException *exception) {
@@ -919,21 +875,7 @@
             
             
             [self updateTotalAmountForVariationDoubleZero];
-            
-            /*
-             NSMutableString *tempStr = [NSMutableString stringWithString:numericTotal];
-             [tempStr insertString:@"." atIndex:[numericTotal length]-2];
-             
-             transferAmount = [tempStr doubleValue];
-             
-             amountTotal.text = [NSString stringWithFormat:@"$%@", tempStr];
-             
-             //NSLog(@"index: %lu, value: %@", (long)countIndex, numericTotal);
-             
-             if ([self.delegate respondsToSelector:@selector(numberPadReturnAmountForView:forNumberString:)])
-             {
-             [self.delegate numberPadReturnAmountForView:self forNumberString:tempStr];
-             }*/
+    
         }
         else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
         {
@@ -983,16 +925,14 @@
 {
     @try {
         
-        NSMutableString *tempStr = [NSMutableString stringWithString:numericTotal];
-        [tempStr insertString:@"." atIndex:[numericTotal length]-2];
-        
         numericTotal = @"000";
         countIndex = 0;
-        amountTotal.text = [NSString stringWithFormat:@"$%@", @"0.00"];
         
-        if ([self.delegate respondsToSelector:@selector(didTapNumberPadAddForView:forNumberString:)])
+        [self resetTotalAmountToZero];
+        
+        if ([self.delegate respondsToSelector:@selector(numberPad:didTapAddForNumberString:)])
         {
-            [self.delegate didTapNumberPadAddForView:self forNumberString:tempStr];
+            [self.delegate numberPad:self didTapAddForNumberString:[NSString stringWithFormat:@"%.2f", transferAmount]];
         }
     }
     @catch (NSException *exception) {

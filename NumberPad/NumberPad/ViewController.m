@@ -35,6 +35,7 @@
 -(void)createNumberPadView
 {
     myNumberPad = [[GBNumberPad alloc]initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+    myNumberPad.delegate = self;
     myNumberPad.hasAddButton = YES;
 
     myNumberPad.amountFontSize = 120;
@@ -57,7 +58,7 @@
     myNumberPad.isSubViewNeedBorder = NO;
     myNumberPad.isOuterViewFrameNeedBorder = NO;
     
-    myNumberPad.myNumberPadVariation = NumberPadVariationDoubleZeroType;
+    myNumberPad.myNumberPadVariation = NumberPadVariationSingleZeroWithDot;
     myNumberPad.myTextAmountUsesSuperscript = YES;
     myNumberPad.myTextAmountAddCommaEvery3Digits = YES;
     
@@ -67,6 +68,24 @@
     
     [self.view addSubview:myNumberPad];
     
+}
+
+
+#pragma mark - GBNumberPad Delegate
+
+-(void)numberPad:(UIView *)numView didTapAtNumberString:(NSString *)string withNumber:(NSInteger)number
+{
+    NSLog(@"tap number view: %@", string);
+}
+
+-(void)numberPadReturnAmountForView:(UIView *)numView forNumberString:(NSString *)number
+{
+    NSLog(@"return amount: %@", number);
+}
+
+-(void)numberPad:(UIView *)numView didTapAddForNumberString:(NSString *)number
+{
+    NSLog(@"tap add: %@", number);
 }
 
 @end
