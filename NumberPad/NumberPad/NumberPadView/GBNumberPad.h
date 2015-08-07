@@ -141,6 +141,8 @@ typedef enum {
 @property (nonatomic) CGFloat myQuarterHeight;
 
 
+//function to reset amount to zero
+-(void)resetNumberPadToZero;
 
 @end
 

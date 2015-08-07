@@ -161,6 +161,25 @@
 }
 
 
+/* RESET FUNCTION */
+
+-(void)resetNumberPadToZero
+{
+    transferAmount = 0;
+    countIndex = 0;
+    
+    [self setInitialStartingValue];
+    
+    [self resetTotalAmountToZero];
+    
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
+    {
+        hasEnabledDecimalPoint = YES;
+        
+        [self NumbersTap0];
+    }
+}
+
 
 
 //////////////  CREATE VIEW ///////////////////////////
@@ -928,12 +947,12 @@
         numericTotal = @"000";
         countIndex = 0;
         
-        [self resetTotalAmountToZero];
-        
         if ([self.delegate respondsToSelector:@selector(numberPad:didTapAddForNumberString:)])
         {
             [self.delegate numberPad:self didTapAddForNumberString:[NSString stringWithFormat:@"%.2f", transferAmount]];
         }
+        
+        [self resetNumberPadToZero];
     }
     @catch (NSException *exception) {
         NSLog(@"exTapAdd: %@", exception.description);

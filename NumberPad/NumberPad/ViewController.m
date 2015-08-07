@@ -25,6 +25,12 @@
     self.view.backgroundColor = [UIColor colorWithRed:40.0/255.0 green:132.0/255.0 blue:220.0/255.0 alpha:1];
     
     [self createNumberPadView];
+    
+    UIButton *resetButton = [[UIButton alloc]initWithFrame:CGRectMake(20, self.view.frame.size.height - 50, 100, 30)];
+    [resetButton setTitle:@"RESET" forState:UIControlStateNormal];
+    [resetButton addTarget:self action:@selector(reset) forControlEvents:UIControlEventTouchUpInside];
+    
+    [self.view addSubview:resetButton];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -70,6 +76,10 @@
     
 }
 
+-(void)reset
+{
+    [myNumberPad resetNumberPadToZero];
+}
 
 #pragma mark - GBNumberPad Delegate
 
