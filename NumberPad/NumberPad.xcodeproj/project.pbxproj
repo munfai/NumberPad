@@ -18,6 +18,8 @@
 		28E7F8041B724EAF00DFBCF7 /* sample_back.png in Resources */ = {isa = PBXBuildFile; fileRef = 28E7F8021B724EAF00DFBCF7 /* sample_back.png */; };
 		28E7F8091B724EB900DFBCF7 /* GBNumberPad.m in Sources */ = {isa = PBXBuildFile; fileRef = 28E7F8061B724EB900DFBCF7 /* GBNumberPad.m */; };
 		28E7F80A1B724EB900DFBCF7 /* GBNumberPadUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 28E7F8081B724EB900DFBCF7 /* GBNumberPadUtils.m */; };
+		C36060C81BFB099E002768E5 /* Stack.m in Sources */ = {isa = PBXBuildFile; fileRef = C36060C71BFB099E002768E5 /* Stack.m */; };
+		C36060CB1BFB09D4002768E5 /* CalculatorComponent.m in Sources */ = {isa = PBXBuildFile; fileRef = C36060CA1BFB09D4002768E5 /* CalculatorComponent.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +52,10 @@
 		28E7F8061B724EB900DFBCF7 /* GBNumberPad.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = GBNumberPad.m; path = NumberPadView/GBNumberPad.m; sourceTree = "<group>"; };
 		28E7F8071B724EB900DFBCF7 /* GBNumberPadUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GBNumberPadUtils.h; path = NumberPadView/GBNumberPadUtils.h; sourceTree = "<group>"; };
 		28E7F8081B724EB900DFBCF7 /* GBNumberPadUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = GBNumberPadUtils.m; path = NumberPadView/GBNumberPadUtils.m; sourceTree = "<group>"; };
+		C36060C61BFB099E002768E5 /* Stack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Stack.h; path = NumberPadView/CalculatorClass/StackObject/Stack.h; sourceTree = "<group>"; };
+		C36060C71BFB099E002768E5 /* Stack.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Stack.m; path = NumberPadView/CalculatorClass/StackObject/Stack.m; sourceTree = "<group>"; };
+		C36060C91BFB09D4002768E5 /* CalculatorComponent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CalculatorComponent.h; path = NumberPadView/CalculatorClass/CalculatorComponent/CalculatorComponent.h; sourceTree = "<group>"; };
+		C36060CA1BFB09D4002768E5 /* CalculatorComponent.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CalculatorComponent.m; path = NumberPadView/CalculatorClass/CalculatorComponent/CalculatorComponent.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +140,7 @@
 		28E7F7FF1B724E8800DFBCF7 /* GBNumberPad */ = {
 			isa = PBXGroup;
 			children = (
+				C36060C31BFB0892002768E5 /* CalculatorClass */,
 				28E7F8051B724EB900DFBCF7 /* GBNumberPad.h */,
 				28E7F8061B724EB900DFBCF7 /* GBNumberPad.m */,
 				28E7F8071B724EB900DFBCF7 /* GBNumberPadUtils.h */,
@@ -149,6 +156,33 @@
 				28E7F8021B724EAF00DFBCF7 /* sample_back.png */,
 			);
 			name = Image;
+			sourceTree = "<group>";
+		};
+		C36060C31BFB0892002768E5 /* CalculatorClass */ = {
+			isa = PBXGroup;
+			children = (
+				C36060C51BFB0949002768E5 /* StackObject */,
+				C36060C41BFB08D9002768E5 /* CalculatorComponent */,
+			);
+			name = CalculatorClass;
+			sourceTree = "<group>";
+		};
+		C36060C41BFB08D9002768E5 /* CalculatorComponent */ = {
+			isa = PBXGroup;
+			children = (
+				C36060C91BFB09D4002768E5 /* CalculatorComponent.h */,
+				C36060CA1BFB09D4002768E5 /* CalculatorComponent.m */,
+			);
+			name = CalculatorComponent;
+			sourceTree = "<group>";
+		};
+		C36060C51BFB0949002768E5 /* StackObject */ = {
+			isa = PBXGroup;
+			children = (
+				C36060C61BFB099E002768E5 /* Stack.h */,
+				C36060C71BFB099E002768E5 /* Stack.m */,
+			);
+			name = StackObject;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -253,10 +287,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C36060C81BFB099E002768E5 /* Stack.m in Sources */,
 				28E7F7E21B724B9A00DFBCF7 /* ViewController.m in Sources */,
 				28E7F7DF1B724B9A00DFBCF7 /* AppDelegate.m in Sources */,
 				28E7F7DC1B724B9A00DFBCF7 /* main.m in Sources */,
 				28E7F80A1B724EB900DFBCF7 /* GBNumberPadUtils.m in Sources */,
+				C36060CB1BFB09D4002768E5 /* CalculatorComponent.m in Sources */,
 				28E7F8091B724EB900DFBCF7 /* GBNumberPad.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -454,6 +490,7 @@
 				28E7F7FB1B724B9A00DFBCF7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		28E7F7FC1B724B9A00DFBCF7 /* Build configuration list for PBXNativeTarget "NumberPadTests" */ = {
 			isa = XCConfigurationList;
@@ -462,6 +499,7 @@
 				28E7F7FE1B724B9A00DFBCF7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

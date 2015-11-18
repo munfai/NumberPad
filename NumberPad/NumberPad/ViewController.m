@@ -62,9 +62,9 @@
     myNumberPad.myTextAmountAlignment = NSTextAlignmentCenter;
     
     myNumberPad.isSubViewNeedBorder = NO;
-    myNumberPad.isOuterViewFrameNeedBorder = NO;
+    myNumberPad.isOuterViewFrameNeedBorder = YES;
     
-    myNumberPad.myNumberPadVariation = NumberPadVariationSingleZeroWithDot;
+    myNumberPad.myNumberPadVariation = NumberPadVariationSingleZeroCalculator;
     myNumberPad.myTextAmountUsesSuperscript = YES;
     myNumberPad.myTextAmountAddCommaEvery3Digits = YES;
     

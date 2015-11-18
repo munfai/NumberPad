@@ -10,7 +10,8 @@
 
 typedef enum {
     NumberPadVariationDoubleZeroType,
-    NumberPadVariationSingleZeroWithDot
+    NumberPadVariationSingleZeroWithDot,
+    NumberPadVariationSingleZeroCalculator
 } NumberPadVariation;
 
 @protocol GBNumberPadViewDelegate;
@@ -75,6 +76,36 @@ typedef enum {
 
 @property (nonatomic) UIImage *addImage;
 
+
+
+//Custom calculator plus button image if any
+//if no image is assigned, a + Label will be used
+
+@property (nonatomic) UIImage *calculatorPlusImage;
+
+
+//Custom calculator minus button image if any
+//if no image is assigned, a - Label will be used
+
+@property (nonatomic) UIImage *calculatorMinusImage;
+
+
+//Custom calculator multiply button image if any
+//if no image is assigned, a x Label will be used
+
+@property (nonatomic) UIImage *calculatorMultiplyImage;
+
+
+//Custom calculator divide button image if any
+//if no image is assigned, a / Label will be used
+
+@property (nonatomic) UIImage *calculatorDivideImage;
+
+
+//Custom calculator equal button image if any
+//if no image is assigned, a + Label will be used
+
+@property (nonatomic) UIImage *calculatorEqualImage;
 
 
 //Font family name if any
