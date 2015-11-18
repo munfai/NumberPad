@@ -21,6 +21,15 @@ typedef enum{
     BorderBottom
 }BorderSide;
 
+typedef enum {
+    CalculatorOperation_Clear,
+    CalculatorOperation_Equal,
+    CalculatorOperation_Divide,
+    CalculatorOperation_Multiply,
+    CalculatorOperation_Minus,
+    CalculatorOperation_Plus
+} CalculatorOperation;
+
 @interface GBNumberPadUtils : NSObject
 
 +(CALayer *)createOneSidedBorderForUIView:(UIView *)myView Side:(BorderSide)Side withBorderColor:(UIColor *)color;

@@ -9,6 +9,11 @@
 #import "GBNumberPad.h"
 #import "GBNumberPadUtils.h"
 
+#import "Stack.h"
+
+#define IMAGEVIEW_HEIGHT 30
+#define IMAGEVIEW_HEIGHT_HALF 15
+
 @interface GBNumberPad()
 {
     UIView *numberPadView;
@@ -17,6 +22,12 @@
     NSInteger countIndex;
     double transferAmount;
     BOOL hasEnabledDecimalPoint;
+    
+    // for calculator use
+    CalculatorOperation selectedOperation;
+    BOOL hasSelectedOperation;
+    Stack *stack;
+    UIView *selectedOperatorBackgroundView;
     
     CGFloat quarterWidth, quarterHeight, screenWidth, screenHeight, amountViewHeight;
 }
@@ -33,10 +44,17 @@
 @property (retain, nonatomic) IBOutlet UIView *NumericView7;
 @property (retain, nonatomic) IBOutlet UIView *NumericView8;
 @property (retain, nonatomic) IBOutlet UIView *NumericView9;
-@property (retain, nonatomic) IBOutlet UIView *NumericView0;
-@property (retain, nonatomic) IBOutlet UIView *NumericViewSingle0;
+@property (retain, nonatomic) IBOutlet UIView *NumericView0; //for double zero in double zero variation, for dot in single zero variation
+@property (retain, nonatomic) IBOutlet UIView *NumericViewSingle0; //for single zero
 @property (retain, nonatomic) IBOutlet UIView *NumericViewBack;
 @property (retain, nonatomic) IBOutlet UIView *NumericViewAdd;
+
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewPlus;
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewMinus;
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewMultiply;
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewDivide;
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewEqual;
+@property (retain, nonatomic) IBOutlet UIView *CalculatorViewClear;
 
 //Custom font if any
 @property (nonatomic) UIFont *numberFont;
@@ -59,6 +77,7 @@
     [self createNumberPadView];
 }
 
+#pragma mark - Initializer
 
 -(id)initWithFrame:(CGRect)frame
 {
@@ -67,7 +86,6 @@
     if (self)
     {
         [self initializeVariable];
-        
         
         [self calculateWidthAndHeight:self.myNumberPadVariation];
         
@@ -109,6 +127,8 @@
     self.myTextAmountAddCommaEvery3Digits = NO;
     
     self.myTextAmountUsesSuperscript = NO;
+    
+    stack = [[Stack alloc]init];
     
     [self setFont];
 }
@@ -161,7 +181,7 @@
 }
 
 
-/* RESET FUNCTION */
+#pragma mark - RESET FUNCTION
 
 -(void)resetNumberPadToZero
 {
@@ -182,7 +202,7 @@
 
 
 
-//////////////  CREATE VIEW ///////////////////////////
+#pragma mark - CREATE VIEW
 
 -(void)createNumberPadView
 {
@@ -195,7 +215,6 @@
     numberPadView.backgroundColor = self.myBackgroundColor;
     
     self.AmountView = [[UIView alloc]initWithFrame:CGRectMake(0, self.myAmountViewY, screenWidth, amountViewHeight)];
-    
     
     
     CGFloat width = quarterWidth;//152;
@@ -247,6 +266,26 @@
         self.NumericViewSingle0 = [[UIView alloc]initWithFrame:CGRectMake(column3x, row4y, width, height)];
         
         self.NumericViewBack = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y, width, height * multiplier)];
+        
+        if (self.hasAddButton)
+        {
+            self.NumericViewAdd = [[UIView alloc]initWithFrame:CGRectMake(column4x, row3y, width, height * multiplier)];
+            
+            UILabel *addLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, quarterWidth, quarterHeight * multiplier)];
+            addLabel.font = fontsize;
+            //number1.font = [GBNumberPadUtils getCustomTypefaceForUILabel:GothamThin withObject:number1];
+            addLabel.text = @"+";
+            addLabel.textColor = [GBNumberPadUtils getBlack69opacityColor];
+            addLabel.textAlignment = NSTextAlignmentCenter;
+            
+            UIImageView *addImageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - 15, height * multiplier/2 - 15, 30, 30)];
+            addImageView.image = self.addImage;
+            
+            if (self.addImage != nil)
+                [self.NumericViewAdd addSubview:addImageView];
+            else
+                [self.NumericViewAdd addSubview:addLabel];
+        }
     }
     else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
     {
@@ -256,34 +295,31 @@
         
         self.NumericViewBack = [[UIView alloc]initWithFrame:CGRectMake(column3x, row4y, width, height)];
     }
-    
-    
-    
-    
-    
-    
-    
-    if (self.hasAddButton)
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
     {
-        self.NumericViewAdd = [[UIView alloc]initWithFrame:CGRectMake(column4x, row3y, width, height * multiplier)];
+        self.NumericView0 = [[UIView alloc]initWithFrame:CGRectMake(column2x, row4y, width, height)];
+        
+        self.NumericViewSingle0 = [[UIView alloc]initWithFrame:CGRectMake(column1x, row4y, width, height)];
+        
+        self.CalculatorViewEqual = [[UIView alloc]initWithFrame:CGRectMake(column3x, row4y, width, height)];
         
         
-        UILabel *addLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 0, quarterWidth, quarterHeight * multiplier)];
-        addLabel.font = fontsize;
-        //number1.font = [GBNumberPadUtils getCustomTypefaceForUILabel:GothamThin withObject:number1];
-        addLabel.text = @"+";
-        addLabel.textColor = [GBNumberPadUtils getBlack69opacityColor];
-        addLabel.textAlignment = NSTextAlignmentCenter;
         
-        UIImageView *addImageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - 15, height * multiplier/2 - 15, 30, 30)];
-        addImageView.image = self.addImage;
+        CGFloat opetatorViewHeight = quarterHeight * 4 / 5;
         
-        if (self.addImage != nil)
-            [self.NumericViewAdd addSubview:addImageView];
-        else
-            [self.NumericViewAdd addSubview:addLabel];
+        self.CalculatorViewClear = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y, width, opetatorViewHeight)];
+        
+        self.CalculatorViewDivide = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y + opetatorViewHeight, width, opetatorViewHeight)];
+        
+        self.CalculatorViewMultiply = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y + opetatorViewHeight * 2, width, opetatorViewHeight)];
+        
+        self.CalculatorViewMinus = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y + opetatorViewHeight * 3, width, opetatorViewHeight)];
+        
+        self.CalculatorViewPlus = [[UIView alloc]initWithFrame:CGRectMake(column4x, row1y + opetatorViewHeight * 4, width, opetatorViewHeight)];
     }
     
+    
+
     if (self.isSubViewNeedBorder)
         [self addBorderToSubView];
     
@@ -410,7 +446,7 @@
     NSString *numberZeroString = @"00";
     UIFont *zeroFont = self.numberFont;
     
-    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot || self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
     {
         numberZeroString = @".";
         zeroFont = [UIFont fontWithName:self.numberFontName size:40];
@@ -448,8 +484,124 @@
     else
         [self.NumericViewBack addSubview:backLabel];
     
-    if (self.hasAddButton)
-        [numberPadView addSubview:self.NumericViewAdd];
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
+    {
+        CGRect operatorFrame = CGRectMake(0, 0, width, quarterHeight * 4 / 5);
+        
+        
+        //equal image for calculator only
+        if (self.calculatorEqualImage != nil)
+        {
+            UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - IMAGEVIEW_HEIGHT_HALF, height / 2 - IMAGEVIEW_HEIGHT_HALF, IMAGEVIEW_HEIGHT, IMAGEVIEW_HEIGHT)];
+            imageView.image = self.calculatorEqualImage;
+            
+            [self.CalculatorViewEqual addSubview:imageView];
+        }
+        else
+        {
+            UILabel *equalLabel = [[UILabel alloc]initWithFrame:numberFrame];
+            equalLabel.font = fontsize;
+            equalLabel.font = self.numberFont;
+            equalLabel.text = @"=";
+            equalLabel.textColor = self.myTextColor;
+            equalLabel.textAlignment = NSTextAlignmentCenter;
+            
+            [self.CalculatorViewEqual addSubview:equalLabel];
+        }
+        
+        //divide image for calculator only
+        if (self.calculatorDivideImage != nil)
+        {
+            UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - IMAGEVIEW_HEIGHT_HALF, quarterHeight * 4 / 5 / 2 - IMAGEVIEW_HEIGHT_HALF, IMAGEVIEW_HEIGHT, IMAGEVIEW_HEIGHT)];
+            imageView.image = self.calculatorDivideImage;
+            
+            [self.CalculatorViewDivide addSubview:imageView];
+        }
+        else
+        {
+            UILabel *divideLabel = [[UILabel alloc]initWithFrame:operatorFrame];
+            divideLabel.font = fontsize;
+            divideLabel.font = self.numberFont;
+            divideLabel.text = @"/";
+            divideLabel.textColor = self.myTextColor;
+            divideLabel.textAlignment = NSTextAlignmentCenter;
+            
+            [self.CalculatorViewDivide addSubview:divideLabel];
+        }
+        
+        //multiply image for calculator only
+        if (self.calculatorMultiplyImage != nil)
+        {
+            UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - IMAGEVIEW_HEIGHT_HALF, quarterHeight * 4 / 5 / 2 - IMAGEVIEW_HEIGHT_HALF, IMAGEVIEW_HEIGHT, IMAGEVIEW_HEIGHT)];
+            imageView.image = self.calculatorMultiplyImage;
+            
+            [self.CalculatorViewMultiply addSubview:imageView];
+        }
+        else
+        {
+            UILabel *multiplyLabel = [[UILabel alloc]initWithFrame:operatorFrame];
+            multiplyLabel.font = fontsize;
+            multiplyLabel.font = self.numberFont;
+            multiplyLabel.text = @"x";
+            multiplyLabel.textColor = self.myTextColor;
+            multiplyLabel.textAlignment = NSTextAlignmentCenter;
+            
+            [self.CalculatorViewMultiply addSubview:multiplyLabel];
+        }
+        
+        //minus image for calculator only
+        if (self.calculatorMinusImage != nil)
+        {
+            UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - IMAGEVIEW_HEIGHT_HALF, quarterHeight * 4 / 5 / 2 - IMAGEVIEW_HEIGHT_HALF, IMAGEVIEW_HEIGHT, IMAGEVIEW_HEIGHT)];
+            imageView.image = self.calculatorMinusImage;
+            
+            [self.CalculatorViewMinus addSubview:imageView];
+        }
+        else
+        {
+            UILabel *minusLabel = [[UILabel alloc]initWithFrame:operatorFrame];
+            minusLabel.font = fontsize;
+            minusLabel.font = self.numberFont;
+            minusLabel.text = @"-";
+            minusLabel.textColor = self.myTextColor;
+            minusLabel.textAlignment = NSTextAlignmentCenter;
+            
+            [self.CalculatorViewMinus addSubview:minusLabel];
+        }
+        
+        //plus image for calculator only
+        if (self.calculatorPlusImage != nil)
+        {
+            UIImageView *imageView = [[UIImageView alloc]initWithFrame:CGRectMake(width/2 - IMAGEVIEW_HEIGHT_HALF, quarterHeight * 4 / 5 / 2 - IMAGEVIEW_HEIGHT_HALF, IMAGEVIEW_HEIGHT, IMAGEVIEW_HEIGHT)];
+            imageView.image = self.calculatorPlusImage;
+            
+            [self.CalculatorViewPlus addSubview:imageView];
+        }
+        else
+        {
+            UILabel *plusLabel = [[UILabel alloc]initWithFrame:operatorFrame];
+            plusLabel.font = fontsize;
+            plusLabel.font = self.numberFont;
+            plusLabel.text = @"+";
+            plusLabel.textColor = self.myTextColor;
+            plusLabel.textAlignment = NSTextAlignmentCenter;
+            
+            [self.CalculatorViewPlus addSubview:plusLabel];
+        }
+
+        
+        
+        UILabel *clearLabel = [[UILabel alloc]initWithFrame:operatorFrame];
+        clearLabel.font = fontsize;
+        clearLabel.font = self.numberFont;
+        clearLabel.text = @"C";
+        clearLabel.textColor = self.myTextColor;
+        clearLabel.textAlignment = NSTextAlignmentCenter;
+        
+        [self.CalculatorViewClear addSubview:clearLabel];
+        
+        
+    }
     
     [self.AmountView addSubview:amountTotal];
 }
@@ -469,6 +621,20 @@
     [numberPadView addSubview:self.NumericView0];
     [numberPadView addSubview:self.NumericViewSingle0];
     [numberPadView addSubview:self.NumericViewBack];
+    
+    if (self.hasAddButton && self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+    {
+        [numberPadView addSubview:self.NumericViewAdd];
+    }
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
+    {
+        [numberPadView addSubview:self.CalculatorViewClear];
+        [numberPadView addSubview:self.CalculatorViewDivide];
+        [numberPadView addSubview:self.CalculatorViewMultiply];
+        [numberPadView addSubview:self.CalculatorViewMinus];
+        [numberPadView addSubview:self.CalculatorViewPlus];
+        [numberPadView addSubview:self.CalculatorViewEqual];
+    }
     
     [self addSubview:numberPadView];
 }
@@ -512,8 +678,17 @@
     
     [self.NumericViewBack.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewBack Side:BorderBottom withBorderColor:self.myBorderColor]];
     
-    if (self.hasAddButton)
-        [self.NumericViewAdd.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewAdd Side:BorderBottom withBorderColor:self.myBorderColor]];
+    if (self.hasAddButton && self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+    {
+         [self.NumericViewAdd.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewAdd Side:BorderBottom withBorderColor:self.myBorderColor]];
+    }
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
+    {
+        [self.CalculatorViewEqual.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewEqual Side:BorderBottom withBorderColor:self.myBorderColor]];
+        [self.CalculatorViewEqual.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewEqual Side:BorderRight withBorderColor:self.myBorderColor]];
+        
+        [self.CalculatorViewPlus.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewPlus Side:BorderBottom withBorderColor:self.myBorderColor]];
+    }
 }
 
 -(void)addBorderToOuterView
@@ -522,33 +697,60 @@
     
     [self.NumericView1.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView1 Side:BorderLeft withBorderColor:self.myBorderColor]];
     
-    
     [self.NumericView4.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView4 Side:BorderLeft withBorderColor:self.myBorderColor]];
-    
     
     [self.NumericView7.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView7 Side:BorderLeft withBorderColor:self.myBorderColor]];
     
     if (!self.isSubViewNeedBorder)
         [self.NumericView0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView0 Side:BorderBottom withBorderColor:self.myBorderColor]];
-    [self.NumericView0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView0 Side:BorderLeft withBorderColor:self.myBorderColor]];
+    
     
     if (!self.isSubViewNeedBorder)
-    [self.NumericViewSingle0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewSingle0 Side:BorderBottom withBorderColor:self.myBorderColor]];
+        [self.NumericViewSingle0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewSingle0 Side:BorderBottom withBorderColor:self.myBorderColor]];
 
-    if (!self.isSubViewNeedBorder)
-        [self.NumericViewBack.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewBack Side:BorderBottom withBorderColor:self.myBorderColor]];
+   
     [self.NumericViewBack.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewBack Side:BorderRight withBorderColor:self.myBorderColor]];
     
-    if (self.hasAddButton)
-        [self.NumericViewAdd.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewAdd Side:BorderRight withBorderColor:self.myBorderColor]];
     
-    if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
     {
         [self.NumericView3.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView3 Side:BorderRight withBorderColor:self.myBorderColor]];
         
         [self.NumericView6.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView6 Side:BorderRight withBorderColor:self.myBorderColor]];
         
         [self.NumericView9.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView9 Side:BorderRight withBorderColor:self.myBorderColor]];
+        
+        if (!self.isSubViewNeedBorder)
+            [self.NumericViewBack.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewBack Side:BorderBottom withBorderColor:self.myBorderColor]];
+        
+        [self.NumericView0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView0 Side:BorderLeft withBorderColor:self.myBorderColor]];
+        
+    }
+    else if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType)
+    {
+        if (self.hasAddButton)
+        {
+            [self.NumericViewAdd.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewAdd Side:BorderRight withBorderColor:self.myBorderColor]];
+            
+            [self.NumericViewAdd.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewAdd Side:BorderBottom withBorderColor:self.myBorderColor]];
+        }
+        
+        if (!self.isSubViewNeedBorder && !self.hasAddButton)
+            [self.NumericViewBack.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericViewBack Side:BorderBottom withBorderColor:self.myBorderColor]];
+        
+        [self.NumericView0.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.NumericView0 Side:BorderLeft withBorderColor:self.myBorderColor]];
+    }
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
+    {
+        [self.CalculatorViewEqual.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewEqual Side:BorderBottom withBorderColor:self.myBorderColor]];
+        
+        [self.CalculatorViewPlus.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewPlus Side:BorderBottom withBorderColor:self.myBorderColor]];
+        
+        [self.CalculatorViewPlus.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewPlus Side:BorderRight withBorderColor:self.myBorderColor]];
+        [self.CalculatorViewMinus.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewMinus Side:BorderRight withBorderColor:self.myBorderColor]];
+        [self.CalculatorViewMultiply.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewMultiply Side:BorderRight withBorderColor:self.myBorderColor]];
+        [self.CalculatorViewDivide.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewDivide Side:BorderRight withBorderColor:self.myBorderColor]];
+        [self.CalculatorViewClear.layer addSublayer:[GBNumberPadUtils createOneSidedBorderForUIView:self.CalculatorViewClear Side:BorderRight withBorderColor:self.myBorderColor]];
     }
 }
 
@@ -596,12 +798,29 @@
     
     if (self.hasAddButton)
         [self.NumericViewAdd addGestureRecognizer:numbertapAdd];
+    
+    if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
+    {
+        UITapGestureRecognizer *tapEqual = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorEqual)];
+        UITapGestureRecognizer *tapClear = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorClear)];
+        UITapGestureRecognizer *tapDivide = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorDivide)];
+        UITapGestureRecognizer *tapMultiply = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorMultiply)];
+        UITapGestureRecognizer *tapMinus = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorMinus)];
+        UITapGestureRecognizer *tapPlus = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(CalculatorTapOperatorPlus)];
+        
+        [self.CalculatorViewEqual addGestureRecognizer:tapEqual];
+        [self.CalculatorViewClear addGestureRecognizer:tapClear];
+        [self.CalculatorViewDivide addGestureRecognizer:tapDivide];
+        [self.CalculatorViewMultiply addGestureRecognizer:tapMultiply];
+        [self.CalculatorViewMinus addGestureRecognizer:tapMinus];
+        [self.CalculatorViewPlus addGestureRecognizer:tapPlus];
+    }
 }
 
 
 
 
-//////////////  HELPER METHOD ///////////////////////////
+#pragma mark - HELPER METHOD
 
 -(void)setInitialStartingValue
 {
@@ -624,7 +843,7 @@
         
         [mString setAttributes:@{NSFontAttributeName : tempFont ,NSBaselineOffsetAttributeName : @50} range:NSMakeRange(0,1)];
         
-        if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
+        if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot || self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
         {
             if (![numeric2Decimal isEqualToString:@"00"])
             {
@@ -677,6 +896,8 @@
         amountText = @"$0";
     else if (self.myNumberPadVariation == NumberPadVariationDoubleZeroType && self.myTextAmountUsesSuperscript)
         amountText = @"$000";
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator && self.myTextAmountUsesSuperscript)
+        amountText = @"$0";
     
     amountTotal.text = amountText;
 
@@ -699,7 +920,8 @@
 }
 
 
-////////////// NUMBER PAD GESTURES ////////////////////////////////
+
+#pragma mark - NUMBER PAD GESTURES
 
 -(void)updateTotalAmountForVariationSingleDot
 {
@@ -811,8 +1033,18 @@
             [self updateTotalAmountForVariationDoubleZero];
 
         }
-        else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
+        else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot || self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
         {
+            if (self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator && hasSelectedOperation)
+            {
+                numericTotal = @"0";
+                numeric2Decimal = @"00";
+                
+                [self resetTotalAmountToZero];
+                
+                hasSelectedOperation = NO;
+            }
+            
             if (!hasEnabledDecimalPoint)
             {
                 if ([numericTotal length] < 1)
@@ -896,7 +1128,7 @@
             [self updateTotalAmountForVariationDoubleZero];
     
         }
-        else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot)
+        else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot || self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator)
         {
             if (!hasEnabledDecimalPoint)
             {
@@ -982,7 +1214,7 @@
             }
         }
     }
-    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot) //user tap on dot, goes into fraction edit mode
+    else if (self.myNumberPadVariation == NumberPadVariationSingleZeroWithDot || self.myNumberPadVariation == NumberPadVariationSingleZeroCalculator) //user tap on dot, goes into fraction edit mode
     {
         if (hasEnabledDecimalPoint)
         {
@@ -1041,5 +1273,206 @@
 }
 
 
+
+#pragma mark - GESTURES FOR CALCULATOR ONLY
+
+-(void) CalculatorTapOperatorEqual
+{
+    NSLog(@"equal");
+    
+    [self processCalculatorOperation:CalculatorOperation_Equal];
+}
+
+-(void) CalculatorTapOperatorClear
+{
+    NSLog(@"clear");
+    
+    [self processCalculatorOperation:CalculatorOperation_Clear];
+}
+
+-(void) CalculatorTapOperatorDivide
+{
+    NSLog(@"divide");
+    
+    [self processCalculatorOperation:CalculatorOperation_Divide];
+}
+
+-(void) CalculatorTapOperatorMultiply
+{
+    NSLog(@"multiply");
+    
+    [self processCalculatorOperation:CalculatorOperation_Multiply];
+}
+
+-(void) CalculatorTapOperatorMinus
+{
+    NSLog(@"minus");
+    
+    [self processCalculatorOperation:CalculatorOperation_Minus];
+}
+
+-(void) CalculatorTapOperatorPlus
+{
+    NSLog(@"plus");
+    
+    [self processCalculatorOperation:CalculatorOperation_Plus];
+}
+
+-(void) processCalculatorOperation:(CalculatorOperation)operation
+{
+    [self setOperatorBackgroundViewForOperation:operation];
+    
+    double totalDouble = [numericTotal doubleValue];
+    double decimalDouble = [numeric2Decimal doubleValue] / 100;
+    
+    totalDouble += decimalDouble;
+    
+    if (operation == CalculatorOperation_Clear)
+    {
+        if (selectedOperation == CalculatorOperation_Equal && hasSelectedOperation)
+        {
+            [self resetTotalAmountToZero];
+        }
+        else
+        {
+            [self NumbersTapBack];
+            
+            hasSelectedOperation = NO;
+        }
+        
+        //selectedOperation = operation;
+        
+    }
+    else
+    {
+        //conditions for selected an operator, then change to another operator, OR
+        //condition for selected equal, then continue operation
+        if (hasSelectedOperation)
+        {
+            if (((CalculatorComponent *)stack.lastObject).isOperator)
+            {
+                [stack pop];
+            }
+            
+            if (operation != CalculatorOperation_Equal)
+            {
+                CalculatorComponent *operatorObject = [[CalculatorComponent alloc]init];
+                operatorObject.isOperator = YES;
+                operatorObject.selectedOperation = operation;
+                
+                [stack push:operatorObject];
+            }
+        }
+        else
+        {
+            if ([stack getStackCount] == 1)
+            {
+                [stack reset];
+            }
+            
+            CalculatorComponent *object = [[CalculatorComponent alloc]init];
+            object.isOperator = NO;
+            object.value = totalDouble;
+            
+            [stack push:object];
+            
+            if (operation != CalculatorOperation_Equal)
+            {
+                CalculatorComponent *operatorObject = [[CalculatorComponent alloc]init];
+                operatorObject.isOperator = YES;
+                operatorObject.selectedOperation = operation;
+                
+                [stack push:operatorObject];
+            }
+        }
+        
+        double value = ((CalculatorComponent *)[stack calculate]).value;
+
+        numericTotal = [NSString stringWithFormat:@"%.2f", value];
+        numeric2Decimal = [NSString stringWithFormat:@"%.2f", value];
+        
+        numericTotal = [numericTotal substringToIndex:numericTotal.length - 3];
+        numeric2Decimal = [numeric2Decimal substringFromIndex:numeric2Decimal.length - 2];
+        
+        [self updateTotalAmountForVariationSingleDot];
+        
+        hasSelectedOperation = YES;
+        selectedOperation = operation;
+
+    }
+    
+    //uncheck the dot button if dot button is selected
+    if (hasEnabledDecimalPoint)
+        [self NumbersTap0];
+}
+
+
+#pragma mark - SET OPERATOR VIEW SELECTION
+
+-(void)setOperatorBackgroundViewForOperation:(CalculatorOperation)operation
+{
+    [self removeSelectedOperatorBackgroundView];
+    
+    UIView *operatorView;
+    
+    switch (operation)
+    {
+        case CalculatorOperation_Plus:
+        {
+            operatorView = self.CalculatorViewPlus;
+        }
+            break;
+            
+        case CalculatorOperation_Minus:
+        {
+            operatorView = self.CalculatorViewMinus;
+        }
+            break;
+            
+        case CalculatorOperation_Multiply:
+        {
+            operatorView = self.CalculatorViewMultiply;
+        }
+            break;
+            
+        case CalculatorOperation_Divide:
+        {
+            operatorView = self.CalculatorViewDivide;
+        }
+            break;
+            
+        case CalculatorOperation_Equal:
+        {
+            operatorView = self.CalculatorViewEqual;
+        }
+            break;
+            
+        default:
+            return;
+            break;
+    }
+    
+    CGRect adjustFrame = operatorView.frame;
+    adjustFrame.size.height = adjustFrame.size.height - 10;
+    adjustFrame.size.width = adjustFrame.size.height;
+    adjustFrame.origin.x = operatorView.frame.size.width / 2 - adjustFrame.size.width / 2;
+    adjustFrame.origin.y = operatorView.frame.size.height / 2 - adjustFrame.size.height / 2;
+    
+    selectedOperatorBackgroundView = [[UIView alloc]initWithFrame:adjustFrame];
+    selectedOperatorBackgroundView.clipsToBounds = YES;
+    selectedOperatorBackgroundView.layer.cornerRadius = selectedOperatorBackgroundView.frame.size.height / 2;
+    selectedOperatorBackgroundView.backgroundColor = [GBNumberPadUtils getColorRGB_4_32_44:0.1];
+    
+    [operatorView insertSubview:selectedOperatorBackgroundView atIndex:0];
+}
+
+-(void)removeSelectedOperatorBackgroundView
+{
+    if (selectedOperatorBackgroundView)
+    {
+        [selectedOperatorBackgroundView removeFromSuperview];
+        selectedOperatorBackgroundView = nil;
+    }
+}
 
 @end
